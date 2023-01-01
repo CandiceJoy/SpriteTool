@@ -19,6 +19,12 @@ namespace SpriteTool
 			{
 				for( int y = 0; y < containerSprites.Count; y++ )
 				{
+					if( container.getModName() == this.getModName()
+					 && x         == y )
+					{
+						continue;
+					}
+
 					if( SpriteConflict.doesConflict( this.sprites[x], containerSprites[y] ))
 					{
 						conflicts.Add( new SpriteConflict( this.sprites[x], containerSprites[y], this.getModName(), container.getModName() ) );

@@ -2,15 +2,18 @@ namespace SpriteTool
 {
 	using System.Collections.ObjectModel;
 	using System.IO.Compression;
+	using System.IO.Enumeration;
+	using System.Text;
 	using System.Text.RegularExpressions;
 
 	public class DirMod : SpriteContainer
 	{
 		public static Regex[]      spriteRegexes = new Regex[] { new Regex( @"^sprites/.*?([^/]+)\.\w+$", RegexOptions.IgnoreCase ), new Regex( @"^filter/Game-\w+/Sprites/.*?([^/]+)\.\w+$", RegexOptions.IgnoreCase ) };
+		public static Regex        texturesRegex = new Regex("^TEXTURES\\.", RegexOptions.IgnoreCase);
 		private       string       path;
 		private       List<string> dirs    = new List<string>();
 		private       List<string> files   = new List<string>();
-
+		private       PatchSet     patches = new PatchSet();
 		public DirMod( string modNameIn, string pathIn )
 		{
 			modName = modNameIn;
@@ -26,7 +29,17 @@ namespace SpriteTool
 
 			foreach( ZipArchiveEntry entry in entries )
 			{
-				files.Add( entry.FullName );
+				string file          = entry.FullName;
+				Match  texturesMatch = DirMod.texturesRegex.Match( file );
+
+				if( texturesMatch.Success )
+				{
+					StreamReader stream   = new StreamReader(entry.Open());
+					string       text     = stream.ReadToEnd();
+					this.patches.addPatches( text );
+				}
+
+				files.Add( file );
 			}
 
 			loadSprites();
@@ -80,18 +93,19 @@ namespace SpriteTool
 
 				foreach( Regex regex in DirMod.spriteRegexes )
 				{
-					Match match = regex.Match( file );
+					Match spriteMatch = regex.Match( file );
 
-					if( match.Success )
+					if( spriteMatch.Success )
 					{
 						//Console.Write(" - IS SPRITE: " + match.Groups[1].Value );
-						this.sprites.Add( match.Groups[1].Value );
+						this.sprites.Add( spriteMatch.Groups[1].Value );
 						break;
 					}
 				}
-
 				//Console.WriteLine();
 			}
+
+			this.patches.exec( sprites );
 		}
 
 		public List<string> getSprites()

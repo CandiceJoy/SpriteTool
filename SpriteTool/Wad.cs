@@ -1,5 +1,4 @@
 //TODO: Add Texture check
-//TODO: Add rotational vs non-rotational check
 
 namespace SpriteTool
 {
@@ -15,6 +14,7 @@ namespace SpriteTool
 		private       byte[]     data;
 		private       List<Lump> lumps   = new List<Lump>();
 		List<Marker>             markers = new List<Marker>();
+		private PatchSet         patches = new PatchSet();
 
 		public Wad( string modNameIn, string pathIn )
 		{
@@ -116,16 +116,25 @@ namespace SpriteTool
 			{
 				string lumpName = lump.getName();
 
-				foreach( Marker marker in markers )
+				if( lumpName == "TEXTURES" )
 				{
-					if( marker.matches( "S" )
-					 && marker.contains( lump ) )
+					this.patches.addPatches( lump.toString() );
+				}
+				else
+				{
+					foreach( Marker marker in markers )
 					{
-						sprites.Add( lumpName );
-						break;
+						if( marker.matches( "S" )
+						 && marker.contains( lump ) )
+						{
+							sprites.Add( lumpName );
+							break;
+						}
 					}
 				}
 			}
+
+			this.patches.exec( sprites );
 		}
 
 		private string getString( uint start, uint end )
